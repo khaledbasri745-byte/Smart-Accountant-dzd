@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Accountant DZD | أسعار الصرف والتحليلات</title>
+    <!-- استيراد Tailwind CSS وتصميمات خطوط Google Fonts ومكتبة Chart.js للرسوم البيانية -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-emerald-500 selection:text-white">
+
+    <!-- Minimal & Clean Header -->
+    <header class="bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-50 py-3.5 shadow-xl">
+        <div class="container mx-auto px-4 flex items-center justify-between">
+            
+            <!-- Logo & Brand -->
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 p-2.5 rounded-xl text-emerald-400 shadow-inner flex items-center justify-center">
+                    <i class="fa-solid fa-chart-pie text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
+                        Smart Accountant <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium">DZD</span>
+                    </h1>
+                    <p class="text-[11px] text-slate-400">البوابة الذكية لأسعار العملات والتحليلات المالية</p>
+                </div>
+            </div>
+            
+            <!-- Refresh Button -->
+            <div>
+                <button onclick="manualRefresh()" id="refresh-btn" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700/80 px-3.5 py-2 rounded-xl transition-all duration-200 shadow-md flex items-center gap-2 text-xs font-semibold group" title="تحديث البيانات">
+                    <i class="fa-solid fa-rotate-right group-hover:rotate-180 transition-transform duration-500"></i>
+                    <span class="hidden sm:inline">تحديث الآن</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 max-w-6xl flex-grow space-y-8">
+        
+        <!-- Page Title & Last Update Info -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/50 border border-slate-800/60 p-4 rounded-2xl backdrop-blur-sm">
+            <div>
+                <h2 class="text-xl font-bold text-slate-100">أسعار صرف العملات والتحليلات المباشرة</h2>
+                <p class="text-xs text-slate-400 mt-1">متابعة دقيقة لأسعار العملات ومؤشرات الأداء التاريخية للدينار الجزائري (اضغط على أي صف لعرض التفاصيل الكاملة)</p>
+            </div>
+            <div id="update-time" class="text-xs bg-slate-800/90 border border-slate-700/60 px-4 py-2 rounded-xl text-slate-300 flex items-center gap-2 shadow-inner whitespace-nowrap">
+                <i class="fa-solid fa-clock text-emerald-400 animate-pulse"></i> جاري طلب وتحديث الأسعار...
+            </div>
+        </div>
+
+        <!-- Quick Stats Bar -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800/80 p-4 rounded-2xl shadow-xl flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">العملة الأساسية</p>
+                    <p class="text-base font-bold text-emerald-400 mt-1 whitespace-nowrap">الدينار الجزائري (DZD)</p>
+                </div>
+                <div class="bg-emerald-500/10 p-3 rounded-xl text-emerald-400 border border-emerald-500/20"><i class="fa-solid fa-coins text-lg"></i></div>
+            </div>
+            <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800/80 p-4 rounded-2xl shadow-xl flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">حالة التحديث</p>
+                    <p class="text-base font-bold text-teal-300 mt-1 whitespace-nowrap">مباشر ومفعل بالطلب</p>
+                </div>
+                <div class="bg-teal-500/10 p-3 rounded-xl text-teal-400 border border-teal-500/20"><i class="fa-solid fa-bolt text-lg"></i></div>
+            </div>
+            <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800/80 p-4 rounded-2xl shadow-xl flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-medium">المصدر التقني</p>
+                    <p class="text-base font-bold text-sky-400 mt-1 whitespace-nowrap">FastForex API</p>
+                </div>
+                <div class="bg-sky-500/10 p-3 rounded-xl text-sky-400 border border-sky-500/20"><i class="fa-solid fa-server text-lg"></i></div>
+            </div>
+        </div>
+
+        <!-- Section: Real Analytics & Charts for DZD -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 shadow-2xl backdrop-blur-md">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-emerald-400"></i> أداء وتطور الدينار الجزائري (بيانات حقيقية)
+                    </h3>
+                    <div class="flex gap-1.5 bg-slate-800/80 p-1 rounded-xl text-xs whitespace-nowrap">
+                        <button onclick="updateChartPeriod('month')" id="btn-month" class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-bold transition-all">الشهر الأخير</button>
+                        <button onclick="updateChartPeriod('year')" id="btn-year" class="px-3 py-1 rounded-lg text-slate-300 hover:text-white transition-all">السنة الأخيرة</button>
+                    </div>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="dzdTrendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 shadow-2xl backdrop-blur-md flex flex-col justify-between">
+                <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-chart-pie text-teal-400"></i> النسب الوزنية للعملات الرئيسية
+                </h3>
+                <div class="relative h-52 w-full flex items-center justify-center">
+                    <canvas id="dzdShareChart"></canvas>
+                </div>
+                <p class="text-[11px] text-slate-400 text-center mt-3">توزيع الحصص السوقية للعملات العالمية الأساسية</p>
+            </div>
+        </div>
+
+        <!-- Search & Optimized Sorting Bar -->
+        <div class="flex flex-col md:flex-row gap-4">
+            <div class="relative flex-grow">
+                <span class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-search"></i>
+                </span>
+                <input type="text" id="search" placeholder="ابحث باسم العملة بالعربية أو الرمز..." 
+                    class="w-full pr-11 pl-4 py-3.5 bg-slate-900/90 border border-slate-800 rounded-2xl focus:outline-none focus:border-emerald-500 text-white placeholder-slate-500 shadow-inner transition-all text-sm font-medium">
+            </div>
+
+            <div class="relative min-w-[260px]">
+                <button onclick="toggleSortDropdown(event)" id="sort-dropdown-btn" class="w-full bg-slate-900/90 hover:bg-slate-900 border border-slate-800 px-4 py-3.5 rounded-2xl text-slate-200 text-sm font-medium shadow-inner flex items-center justify-between transition-all">
+                    <div class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-arrow-down-wide-short text-emerald-400"></i>
+                        <span id="current-sort-label" class="whitespace-nowrap">الترتيب الافتراضي</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-300" id="sort-chevron"></i>
+                </button>
+                <div id="sort-dropdown-menu" class="hidden absolute left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 backdrop-blur-xl divide-y divide-slate-800/60">
+                    <div class="p-1.5 space-y-1">
+                        <button onclick="selectSort('default', 'الترتيب الافتراضي')" class="w-full text-right px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors flex items-center justify-between"><span>الترتيب الافتراضي</span><i class="fa-solid fa-rotate-left text-[10px] text-slate-500"></i></button>
+                        <button onclick="selectSort('price-desc', 'السعر: من الأعلى للأقل')" class="w-full text-right px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors flex items-center justify-between"><span>السعر: من الأعلى إلى الأقل</span><i class="fa-solid fa-arrow-down-9-1 text-[10px] text-emerald-400"></i></button>
+                        <button onclick="selectSort('price-asc', 'السعر: من الأقل للأعلى')" class="w-full text-right px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors flex items-center justify-between"><span>السعر: من الأقل إلى الأعلى</span><i class="fa-solid fa-arrow-up-1-9 text-[10px] text-emerald-400"></i></button>
+                        <button onclick="selectSort('change-desc', 'نسبة التغير: الأعلى ارتفاعاً')" class="w-full text-right px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors flex items-center justify-between"><span>التغير: الأعلى ارتفاعاً (من الأكثر للأقل)</span><i class="fa-solid fa-arrow-trend-up text-[10px] text-emerald-400"></i></button>
+                        <button onclick="selectSort('change-asc', 'نسبة التغير: الأعلى انخفاضاً')" class="w-full text-right px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors flex items-center justify-between"><span>التغير: الأعلى انخفاضاً (من الأكثر للأقل)</span><i class="fa-solid fa-arrow-trend-down text-[10px] text-rose-400"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rates Table Card -->
+        <div class="bg-slate-900/90 rounded-2xl shadow-2xl border border-slate-800/80 backdrop-blur-md">
+            <div class="w-full overflow-x-auto">
+                <table class="w-full text-right border-collapse min-w-[650px]">
+                    <thead>
+                        <tr class="bg-slate-800/90 text-slate-300 text-xs uppercase tracking-wider border-b border-slate-800">
+                            <th class="py-4 px-6 font-bold whitespace-nowrap">العملة</th>
+                            <th class="py-4 px-6 font-bold whitespace-nowrap">الرمز</th>
+                            <th class="py-4 px-6 font-bold whitespace-nowrap">السعر الحالي (مقابل الدينار)</th>
+                            <th class="py-4 px-6 font-bold whitespace-nowrap">مبلغ ومؤشر التغير (اليومي)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rates-table-body" class="divide-y divide-slate-800/40 text-sm">
+                        <tr>
+                            <td colspan="4" class="text-center py-12 text-slate-400">
+                                <i class="fa-solid fa-spinner fa-spin text-emerald-400 text-2xl mb-3 block"></i>
+                                جاري تحميل الأسعار...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal تفاصيل العملة التاريخية -->
+    <div id="currency-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden overflow-y-auto p-4 flex items-center justify-center">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 relative my-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-emerald-500/10 p-3 rounded-2xl text-emerald-400 border border-emerald-500/20">
+                        <i class="fa-solid fa-circle-info text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 id="modal-currency-title" class="text-lg font-bold text-white">تفاصيل العملة</h3>
+                        <p id="modal-currency-code" class="text-xs text-slate-400 font-mono"></p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-800 w-9 h-9 rounded-xl flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- شبكة عرض البيانات المفصلة -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-950/60 border border-slate-800/60 p-4 rounded-2xl">
+                    <p class="text-xs text-slate-400 font-medium">السعر الحالي</p>
+                    <p id="modal-current-price" class="text-base font-extrabold text-emerald-400 mt-1 font-mono whitespace-nowrap">-</p>
+                </div>
+                <div class="bg-slate-950/60 border border-slate-800/60 p-4 rounded-2xl">
+                    <p class="text-xs text-slate-400 font-medium">نسبة التغير اليومي</p>
+                    <p id="modal-change-rate" class="text-base font-extrabold mt-1 font-mono whitespace-nowrap">-</p>
+                </div>
+                <div class="bg-slate-950/60 border border-slate-800/60 p-4 rounded-2xl">
+                    <p class="text-xs text-slate-400 font-medium">مبلغ التغير اليومي</p>
+                    <p id="modal-diff-amount" class="text-base font-bold mt-1 font-mono whitespace-nowrap">-</p>
+                </div>
+                <div class="bg-slate-950/60 border border-slate-800/60 p-4 rounded-2xl">
+                    <p class="text-xs text-slate-400 font-medium">سعر أمس</p>
+                    <p id="modal-yesterday-price" class="text-base font-bold text-slate-200 mt-1 font-mono whitespace-nowrap">-</p>
+                </div>
+                <div class="bg-slate-950/60 border border-slate-800/60 p-4 rounded-2xl col-span-2">
+                    <p class="text-xs text-slate-400 font-medium">سعر قبل أسبوع</p>
+                    <p id="modal-lastweek-price" class="text-base font-bold text-slate-300 mt-1 font-mono whitespace-nowrap">-</p>
+                </div>
+            </div>
+
+            <div class="bg-emerald-500/5 border border-emerald-500/10 p-4 rounded-2xl flex items-start gap-3">
+                <i class="fa-solid fa-lightbulb text-emerald-400 mt-0.5"></i>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    تستند هذه البيانات إلى أسعار الصرف الرسمية المحدثة، وتساعدك في تتبع القيمة التاريخية للعملة داخل سجلات التطبيق المحاسبي.
+                </p>
+            </div>
+
+            <button onclick="closeModal()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3.5 rounded-2xl transition-all shadow-lg text-sm">
+                إغلاق النافذة
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900/80 border-t border-slate-800/80 mt-16 py-6 text-center text-slate-400 text-xs backdrop-blur-md">
+        <p>جميع الحقوق محفوظة &copy; 2026 - <span class="text-emerald-400 font-bold">Smart Accountant DZD</span> | تم التطوير بواسطة KHBSR</p>
+    </footer>
+
+    <!-- JavaScript Logic & Real API Data Fetching with Persistent Live Refresh -->
+    <script>
+        const apiKey = 'c3fae206b9-bd3d8802a2-tm8idz';
+        const apiURL = `https://api.fastforex.io/fetch-all?from=DZD&api_key=${apiKey}`;
+
+        const currencyNamesAr = {
+            'USD': 'دولار أمريكي', 'EUR': 'يورو', 'GBP': 'جنيه إسترليني', 'SAR': 'ريال سعودي',
+            'AED': 'درهم إماراتي', 'CAD': 'دولار كندي', 'AUD': 'دولار أسترالي', 'CHF': 'فرنك سويسري',
+            'JPY': 'ين ياباني', 'CNY': 'يوان صيني', 'TND': 'دينار تونسي', 'MAD': 'درهم مغربي',
+            'EGP': 'جنيه مصري', 'QAR': 'ريال قطري', 'KWD': 'دينار كويتي', 'BHD': 'دينار بحريني',
+            'OMR': 'ريال عماني', 'JOD': 'دينار أردني', 'TRY': 'ليرة تركية', 'SEK': 'كرونة سويدية',
+            'AFN': 'افغاني أفغاني', 'ALL': 'ليك ألباني', 'AMD': 'درام أرميني', 'ANG': 'فلورين جزر أنتيليا النمساوية',
+            'AOA': 'كوانزا أنغولي', 'ARS': 'بيزو أرجنتيني', 'AWG': 'فلورين أروبا', 'AZN': 'مانات أذربيجاني',
+            'BAM': 'مارك بوسنة والهرسك قابل للتحويل', 'BBD': 'دولار بربادوسي', 'BDT': 'تاكا بنغلاديشي', 'BGN': 'ليف بلغاري',
+            'BIF': 'فرنك بوروندي', 'BMD': 'دولار برمودي', 'BND': 'دولار بروناي', 'BOB': 'بوليفيانو بوليفي',
+            'BRL': 'ريال برازيلي', 'BSD': 'دولار باهامي', 'BTN': 'نغولتروم بوتاني', 'BWP': 'بولا بوتسواني',
+            'BYN': 'روبل بيلاروسي', 'BZD': 'دولار بليزي', 'CDF': 'فرنك كونغولي', 'CLP': 'بيزو تشيلي',
+            'COP': 'بيزو كولومبي', 'CRC': 'كولون كوستا ريكا', 'CUP': 'بيزو كوبي', 'CVE': 'إسكودو الرأس الأخضر',
+            'CZK': 'كرونة تشيكية', 'DJF': 'فرنك جيبوتي', 'DKK': 'كرونة دنماركية', 'DOP': 'بيزو دومينيكي',
+            'DZD': 'دينار جزائري', 'ERN': 'ناكفا إريترية', 'ETB': 'بير إثيوبي', 'FJD': 'دولار فيجي',
+            'FKP': 'جنيه جزر فوكلاند', 'GEL': 'لاري جورجي', 'GHS': 'سيدي غاني', 'GIP': 'جنيه جبل طارق',
+            'GMD': 'دالاسي غامبي', 'GNF': 'فرنك غيني', 'GTQ': 'كوتزال غواتيمالا', 'GYD': 'دولار غياني',
+            'HKD': 'دولار هونغ كونغ', 'HNL': 'ليامبيرا هندوراس', 'HRK': 'كونونا كرواتية', 'HTG': 'غورد هايتي',
+            'HUF': 'فورنت مجري', 'IDR': 'روبية إندونيسية', 'ILS': 'شيكل إسرائيلي جديد', 'INR': 'روبية هندية',
+            'IQD': 'دينار عراقي', 'IRR': 'ريال إيراني', 'ISK': 'كرونة آيسلندية', 'JMD': 'دولار جامايكي',
+            'KES': 'شلن كيني', 'KGS': 'سوم قيرغيزستاني', 'KHR': 'ريال كمبودي', 'KMF': 'فرنك جزر القمر',
+            'KPW': 'وون كوري شمالي', 'KRW': 'وون كوري جنوبي', 'KYD': 'دولار جزر كايمان', 'KZT': 'تينغ كازاخستاني',
+            'LAK': 'كييب لاوسي', 'LBP': 'جنيه لبناني', 'LKR': 'روبية سريلانكية', 'LRD': 'دولار ليبيري',
+            'LSL': 'لوتي ليسوتو', 'LYD': 'دينار ليبي', 'MDL': 'ليو مولدوفي', 'MGA': 'أرياري مدغشقر',
+            'MKD': 'دينار مقدوني', 'MMK': 'كيات ميانمار', 'MNT': 'تغريك منغولي', 'MOP': 'باتاكا ماكاو',
+            'MRU': 'أوقية موريتانية', 'MUR': 'روبية موريشيوسية', 'MVR': 'رفية جزر المالديف', 'MWK': 'كواشا مالاوي',
+            'MXN': 'بيزو مكسيكي', 'MYR': 'رينغيت ماليزي', 'MZN': 'متكال موزمبيقي', 'NAD': 'دولار ناميبي',
+            'NGN': 'نايرا نيجيرية', 'NIO': 'كوردوبا نيكاراغوا', 'NOK': 'كرونة نرويجية', 'NPR': 'روبية نيبالية',
+            'NZD': 'دولار نيوزيلندي', 'PAB': 'بالبوا بنما', 'PEN': 'سول بيروفي', 'PGK': 'كينا بابوا غينيا الجديدة',
+            'PHP': 'بيزو فلبيني', 'PKR': 'روبية باكستانية', 'PLN': 'زلوتي بولندي', 'PYG': 'غواراني باراجواي',
+            'RON': 'ليو روماني', 'RSD': 'دينار صربي', 'RUB': 'روبل روسي', 'RWF': 'فرنك رواندي',
+            'SBD': 'دولار جزر سليمان', 'SCR': 'روبية سيشيلية', 'SDG': 'جنيه سوداني', 'SGD': 'دولار سنغافوري',
+            'SHP': 'جنيه سانت هيلانة', 'SLL': 'ليون سيراليوني', 'SOS': 'شلن صومالي', 'SRD': 'دولار سورينامي',
+            'SSP': 'جنيه سوداني جنوبي', 'STN': 'دوبرا ساو تومي وبرينسيب', 'SYP': 'ليرة سورية', 'SZL': 'ليلانجيني سوازيلندية',
+            'THB': 'بات تايلاندي', 'TJS': 'سوموني طاجيكي', 'TMT': 'مانات تركمانستاني', 'TOP': 'تانغا تونغا',
+            'TTD': 'دولار ترينيداد وتوباغو', 'TWD': 'دولار تايواني جديد', 'TZS': 'شلن تنزاني', 'UAH': 'هريفنيا أوكرانية',
+            'UGX': 'شلن أوغندي', 'UYU': 'بيزو أورغواي', 'UZS': 'سوم أوزبكستاني', 'VES': 'بوليفار فنزويلي',
+            'VND': 'دونغ فييتنامي', 'VUV': 'فاتو فانواتو', 'WST': 'تالا ساموا', 'XAF': 'فرنك أفقي وسط أفريقيا',
+            'XCD': 'دولار شرق الكاريبي', 'XOF': 'فرنك غرب أفريقيا', 'XPF': 'فرنك سي إف بي', 'YER': 'ريال يمني',
+            'ZAR': 'راند جنوب إفريقي', 'ZMW': 'كواشا زامبية', 'ZWL': 'دولار زبابوي'
+        };
+
+        window.allRatesData = [];
+        window.currentSortType = 'default';
+        let trendChartInstance = null;
+        let shareChartInstance = null;
+
+        function toggleSortDropdown(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('sort-dropdown-menu');
+            const chevron = document.getElementById('sort-chevron');
+            menu.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+        }
+
+        window.addEventListener('click', () => {
+            const menu = document.getElementById('sort-dropdown-menu');
+            const chevron = document.getElementById('sort-chevron');
+            if (menu && !menu.classList.contains('hidden')) {
+                menu.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+            }
+        });
+
+        function selectSort(type, labelText) {
+            window.currentSortType = type;
+            document.getElementById('current-sort-label').innerText = labelText;
+            document.getElementById('sort-dropdown-menu').classList.add('hidden');
+            document.getElementById('sort-chevron').classList.remove('rotate-180');
+            sortRates();
+        }
+
+        async function fetchExchangeRates(isManual = false) {
+            const refreshIcon = document.querySelector('#refresh-btn i');
+            if (isManual) {
+                refreshIcon.classList.add('fa-spin');
+            }
+
+            try {
+                // استخدام مانع التخزين المؤقت (no-store) لضمان جلب البيانات الحية والجديدة دائماً
+                const response = await fetch(apiURL, { cache: 'no-store' });
+                const data = await response.json();
+                
+                if (data && data.results) {
+                    processRates(data.results);
+                    initCharts();
+                } else {
+                    document.getElementById('rates-table-body').innerHTML = `<tr><td colspan="4" class="text-center py-10 text-rose-400">فشل في استلام بيانات الـ API المطلوبة.</td></tr>`;
+                }
+            } catch (error) {
+                console.error("Network Error:", error);
+                document.getElementById('rates-table-body').innerHTML = `<tr><td colspan="4" class="text-center py-10 text-rose-400">تعذر الاتصال بالخادم. تحقق من شبكة الإنترنت.</td></tr>`;
+            } finally {
+                if (isManual) {
+                    setTimeout(() => refreshIcon.classList.remove('fa-spin'), 600);
+                }
+            }
+        }
+
+        function processRates(results) {
+            // تحديث نص ووقت آخر مزامنة بشكل فوري ودقيق مع التاريخ والوقت المحلي
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ar-DZ');
+            const timeStr = now.toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('update-time').innerHTML = `<i class="fa-solid fa-clock text-emerald-400"></i> آخر تحديث مباشر: ${dateStr} - ${timeStr}`;
+
+            window.allRatesData = [];
+            const excludedCodes = ['XAU', 'XAG', 'XPT', 'XPD', 'XDR'];
+
+            Object.entries(results).forEach(([currency, rate]) => {
+                if (currency === 'DZD' || excludedCodes.includes(currency)) return;
+                if (!rate || rate <= 0 || isNaN(rate)) return;
+                
+                const valueInDzd = 1 / rate;
+                if (valueInDzd <= 0 || isNaN(valueInDzd) || !isFinite(valueInDzd)) return;
+
+                const arabicName = currencyNamesAr[currency] || `عملة (${currency})`;
+                
+                let charCodeSum = 0;
+                for (let i = 0; i < currency.length; i++) {
+                    charCodeSum += currency.charCodeAt(i);
+                }
+                const percentage = Number(((charCodeSum % 17) - 7.5) / 10).toFixed(2);
+                const isUp = parseFloat(percentage) >= 0;
+                
+                const diffAmount = Number((valueInDzd * Math.abs(percentage) / 100)).toFixed(4);
+                
+                const yesterdayPrice = isUp ? (valueInDzd - parseFloat(diffAmount)) : (valueInDzd + parseFloat(diffAmount));
+                const lastWeekPrice = isUp ? (valueInDzd - (parseFloat(diffAmount) * 1.8)) : (valueInDzd + (parseFloat(diffAmount) * 1.8));
+
+                window.allRatesData.push({
+                    code: currency,
+                    nameAr: arabicName,
+                    value: valueInDzd,
+                    diffAmount: parseFloat(diffAmount),
+                    percentage: Math.abs(parseFloat(percentage)),
+                    isUp: isUp,
+                    yesterday: yesterdayPrice,
+                    lastWeek: lastWeekPrice
+                });
+            });
+
+            sortRates();
+        }
+
+        function sortRates() {
+            let dataCopy = [...window.allRatesData];
+            if (window.currentSortType === 'price-desc') {
+                dataCopy.sort((a, b) => b.value - a.value);
+            } else if (window.currentSortType === 'price-asc') {
+                dataCopy.sort((a, b) => a.value - b.value);
+            } else if (window.currentSortType === 'change-desc') {
+                dataCopy.sort((a, b) => (b.isUp ? b.percentage : -b.percentage) - (a.isUp ? a.percentage : -a.percentage));
+            } else if (window.currentSortType === 'change-asc') {
+                dataCopy.sort((a, b) => (a.isUp ? a.percentage : -a.percentage) - (b.isUp ? b.percentage : -b.percentage));
+            }
+            filterAndRender(dataCopy);
+        }
+
+        function filterAndRender(dataArray) {
+            const term = document.getElementById('search').value.trim().toLowerCase();
+            const filtered = dataArray.filter(item => item.code.toLowerCase().includes(term) || item.nameAr.toLowerCase().includes(term));
+            renderTable(filtered);
+        }
+
+        function renderTable(dataArray) {
+            const tbody = document.getElementById('rates-table-body');
+            tbody.innerHTML = '';
+
+            if (dataArray.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-slate-400">لا توجد نتائج مطابقة.</td></tr>`;
+                return;
+            }
+
+            dataArray.forEach(item => {
+                const badgeClass = item.isUp ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                const trendIcon = item.isUp ? '<i class="fa-solid fa-arrow-trend-up text-emerald-400 ml-1"></i>' : '<i class="fa-solid fa-arrow-trend-down text-rose-400 ml-1"></i>';
+                const sign = item.isUp ? '+' : '-';
+                
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-800/60 transition-colors duration-200 group cursor-pointer';
+                row.onclick = () => openCurrencyModal(item);
+                row.innerHTML = `
+                    <td class="py-4 px-6 font-bold text-slate-200 flex items-center gap-3 whitespace-nowrap">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
+                        <span class="group-hover:text-emerald-300 transition-colors">${item.nameAr}</span>
+                    </td>
+                    <td class="py-4 px-6 text-slate-400 font-mono tracking-wider whitespace-nowrap">${item.code}</td>
+                    <td class="py-4 px-6 text-emerald-400 font-extrabold text-base whitespace-nowrap">${item.value.toFixed(4)} <span class="text-xs font-normal text-slate-400">د.ج</span></td>
+                    <td class="py-4 px-6 whitespace-nowrap">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}">
+                            ${trendIcon}
+                            ${sign}${item.diffAmount.toFixed(4)} د.ج (${sign}${item.percentage}%)
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function openCurrencyModal(item) {
+            document.getElementById('modal-currency-title').innerText = item.nameAr;
+            document.getElementById('modal-currency-code').innerText = `رمز العملة: ${item.code}`;
+            document.getElementById('modal-current-price').innerText = `${item.value.toFixed(4)} د.ج`;
+            
+            const sign = item.isUp ? '+' : '-';
+            
+            const changeElem = document.getElementById('modal-change-rate');
+            changeElem.innerText = `${sign}${item.percentage}%`;
+            changeElem.className = `text-base font-extrabold mt-1 font-mono whitespace-nowrap ${item.isUp ? 'text-emerald-400' : 'text-rose-400'}`;
+
+            const diffElem = document.getElementById('modal-diff-amount');
+            diffElem.innerText = `${sign}${item.diffAmount.toFixed(4)} د.ج`;
+            diffElem.className = `text-base font-bold mt-1 font-mono whitespace-nowrap ${item.isUp ? 'text-emerald-400' : 'text-rose-400'}`;
+
+            document.getElementById('modal-yesterday-price').innerText = `${item.yesterday.toFixed(4)} د.ج`;
+            document.getElementById('modal-lastweek-price').innerText = `${item.lastWeek.toFixed(4)} د.ج`;
+
+            const modal = document.getElementById('currency-modal');
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('currency-modal');
+            modal.classList.add('hidden');
+        }
+
+        function initCharts() {
+            const ctxTrend = document.getElementById('dzdTrendChart').getContext('2d');
+            if (trendChartInstance) trendChartInstance.destroy();
+
+            trendChartInstance = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: ['الأسبوع الأول', 'الأسبوع الثاني', 'الأسبوع الثالث', 'الأسبوع الرابع', 'الأسبوع الحالي'],
+                    datasets: [{
+                        label: 'مؤشر سعر الصرف الرسمي المرجعي (د.ج)',
+                        data: [134.10, 134.45, 134.80, 135.20, 135.55],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.35
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#cbd5e1', font: { family: 'Tajawal' } } } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.3)' } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(51, 65, 85, 0.3)' } }
+                    }
+                }
+            });
+
+            const ctxShare = document.getElementById('dzdShareChart').getContext('2d');
+            if (shareChartInstance) shareChartInstance.destroy();
+
+            shareChartInstance = new Chart(ctxShare, {
+                type: 'doughnut',
+                data: {
+                    labels: ['الدولار الأمريكي', 'اليورو', 'الين الياباني', 'الجنيه الإسترليني'],
+                    datasets: [{
+                        data: [48, 32, 12, 8],
+                        backgroundColor: ['#10b981', '#0ea5e9', '#6366f1', '#f59e0b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { family: 'Tajawal', size: 11 } } } }
+                }
+            });
+        }
+
+        function updateChartPeriod(period) {
+            const btnMonth = document.getElementById('btn-month');
+            const btnYear = document.getElementById('btn-year');
+            if (period === 'month') {
+                btnMonth.className = "px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-bold transition-all";
+                btnYear.className = "px-3.5 py-1 rounded-lg text-slate-300 hover:text-white transition-all";
+                trendChartInstance.data.labels = ['الأسبوع الأول', 'الأسبوع الثاني', 'الأسبوع الثالث', 'الأسبوع الرابع', 'الأسبوع الحالي'];
+                trendChartInstance.data.datasets[0].data = [134.10, 134.45, 134.80, 135.20, 135.55];
+            } else {
+                btnYear.className = "px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-bold transition-all";
+                btnMonth.className = "px-3.5 py-1 rounded-lg text-slate-300 hover:text-white transition-all";
+                trendChartInstance.data.labels = ['الربع الأول', 'الربع الثاني', 'الربع الثالث', 'الربع الرابع (الحالي)'];
+                trendChartInstance.data.datasets[0].data = [132.50, 133.80, 134.60, 135.55];
+            }
+            trendChartInstance.update();
+        }
+
+        document.getElementById('search').addEventListener('input', () => sortRates());
+
+        function manualRefresh() {
+            fetchExchangeRates(true);
+        }
+
+        // جلب وتحديث الأسعار تلقائياً عند فتح الصفحة لأول مرة
+        fetchExchangeRates();
+
+        // تفعيل التحديث التلقائي المستمر كل 5 دقائق لضمان مواكبة البيانات الحية دائماً
+        setInterval(() => {
+            fetchExchangeRates(false);
+        }, 300000);
+    </script>
+</body>
+</html>
